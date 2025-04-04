@@ -11,6 +11,13 @@
 // For more info see docs.battlesnake.com
 
 import runServer from './server.js';
+import { preventOutOfBounds } from './preventOutOfBounds.js';
+import checkSelfCollision from './checkSelfCollision.js';
+import checkSnakeCollision from './checkSnakeCollision.js';
+import { getMoveTowardsFood } from './foodTargeting.js';
+import { printBoard } from './printBoard.js';
+
+
 
 // info is called when you create your Battlesnake on play.battlesnake.com
 // and controls your Battlesnake's appearance
@@ -20,10 +27,10 @@ function info() {
 
   return {
     apiversion: "1",
-    author: "",       // TODO: Your Battlesnake Username
-    color: "#888888", // TODO: Choose color
-    head: "default",  // TODO: Choose head
-    tail: "default",  // TODO: Choose tail
+    author: "ichindris, dismaili1, rrama5, jkotori123, mmatevski, aganiu",       
+    color: "#FF5733",       
+    head: "beluga",         
+    tail: "bolt",  
   };
 }
 
@@ -65,16 +72,12 @@ function move(gameState) {
   } else if (myNeck.y > myHead.y) { // Neck is above head, don't move up
     isMoveSafe.up = false;
   }
+  
+  isMoveSafe = preventOutOfBounds(myHead, gameState, isMoveSafe);
 
-  // TODO: Step 1 - Prevent your Battlesnake from moving out of bounds
-  // boardWidth = gameState.board.width;
-  // boardHeight = gameState.board.height;
+  isMoveSafe = checkSelfCollision(gameState, myHead, isMoveSafe);
 
-  // TODO: Step 2 - Prevent your Battlesnake from colliding with itself
-  // myBody = gameState.you.body;
-
-  // TODO: Step 3 - Prevent your Battlesnake from colliding with other Battlesnakes
-  // opponents = gameState.board.snakes;
+  isMoveSafe = checkSnakeCollision(gameState, myHead, isMoveSafe);
 
   // Are there any safe moves left?
   const safeMoves = Object.keys(isMoveSafe).filter(key => isMoveSafe[key]);
@@ -83,14 +86,17 @@ function move(gameState) {
     return { move: "down" };
   }
 
-  // Choose a random move from the safe moves
-  const nextMove = safeMoves[Math.floor(Math.random() * safeMoves.length)];
-
-  // TODO: Step 4 - Move towards food instead of random, to regain health and survive longer
   // food = gameState.board.food;
+  // moving for longer survival 
+  // choose next move towards food if available otherwise fall back to a random safe move 
+  let nextMove = getMoveTowardsFood(gameState, safeMoves);
+if (nextMove) {
+  console.log(`MOVE ${gameState.turn}: Moving towards food -> ${nextMove}`);
+} else {
+  nextMove = safeMoves[Math.floor(Math.random() * safeMoves.length)];
+  console.log(`MOVE ${gameState.turn}: No food path, random move -> ${nextMove}`);
+}
 
-  console.log(`MOVE ${gameState.turn}: ${nextMove}`)
-  return { move: nextMove };
 }
 
 runServer({
